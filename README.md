@@ -9,9 +9,3 @@
   <img src="./term-3d.svg" width="100%" align="top" alt="Gráfico 3D de contribuições do GitHub" />
   <img src="./term-bottom.svg" width="100%" align="top" alt="build" />
 </p>
-
-<br>
-
-<p align="center">
-  <img src="./terminal-footer.svg" alt="exit" width="100%" />
-</p>
