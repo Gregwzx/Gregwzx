@@ -2,8 +2,8 @@ name: GitHub-Profile-3D-Contrib
 
 on:
   schedule:
-    - cron: "0 18 * * *"
-  workflow_dispatch:
+    - cron: "0 18 * * *"   # roda todo dia
+  workflow_dispatch:        # permite rodar manualmente
 
 permissions:
   contents: write
@@ -19,6 +19,57 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USERNAME: ${{ github.repository_owner }}
+
+      # Encaixa o gráfico 3D dentro da janela do terminal (term-3d.svg)
+      - name: Wrap 3D chart in terminal frame
+        run: |
+          python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+
+          SVG = "http://www.w3.org/2000/svg"
+          ET.register_namespace("", SVG)
+          ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+
+          root = ET.parse("profile-3d-contrib/profile-night-rainbow.svg").getroot()
+
+          def num(v):
+              return float(re.sub(r"[^0-9.]", "", v)) if v else None
+
+          vb = root.get("viewBox")
+          if vb:
+              _, _, W, H = [float(x) for x in vb.split()]
+          else:
+              W, H = num(root.get("width")), num(root.get("height"))
+          W, H = int(W), int(H)
+
+          # remove o fundo opaco do gráfico para o fundo do terminal aparecer
+          for child in list(root):
+              if child.tag.endswith("rect"):
+                  w, h = child.get("width"), child.get("height")
+                  if w in (str(W), "100%") and h in (str(H), "100%"):
+                      root.remove(child)
+              if child.tag.endswith("rect"):
+                  break
+
+          root.set("x", "0")
+          root.set("y", "0")
+          root.set("width", str(W))
+          root.set("height", str(H))
+          root.set("viewBox", f"0 0 {W} {H}")
+          inner = ET.tostring(root, encoding="unicode")
+
+          k = W / 820  # mantém a borda do mesmo tamanho das outras fatias
+          out = (
+              f'<svg xmlns="{SVG}" width="{W}" height="{H}" viewBox="0 0 {W} {H}">'
+              f'<rect width="{W}" height="{H}" fill="#120a1f"/>'
+              f"{inner}"
+              f'<path d="M{k} 0 V{H} M{W - k} 0 V{H}" fill="none" '
+              f'stroke="#9b59b6" stroke-width="{2 * k}"/>'
+              f"</svg>"
+          )
+          open("term-3d.svg", "w", encoding="utf-8").write(out)
+          PY
 
       - name: Commit & Push
         run: |
